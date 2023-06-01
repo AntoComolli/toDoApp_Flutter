@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:toaflutter_/constants/colors.dart';
 import 'package:toaflutter_/mode/todo.dart';
 import 'package:toaflutter_/widget/todo_item.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Home extends StatefulWidget {
   Home({Key? key}) : super(key: key);
@@ -17,8 +18,24 @@ class _HomeState extends State<Home> {
 
   @override
   void initState() {
-    foundToDo = toDoList;
+    _loadToDoList();
     super.initState();
+  }
+
+  void _loadToDoList() async {
+    final prefs = await SharedPreferences.getInstance();
+    final todoListString = prefs.getStringList('todoList') ?? [];
+
+    setState(() {
+      toDoList.clear();
+      for (final todoText in todoListString) {
+        toDoList.add(toDo(
+          id: DateTime.now().microsecondsSinceEpoch.toString(),
+          toDoText: todoText,
+        ));
+      }
+      foundToDo = toDoList;
+    });
   }
 
   @override
@@ -36,11 +53,11 @@ class _HomeState extends State<Home> {
                 child: ListView(
                   children: [
                     Container(
-                      margin: EdgeInsets.only(
+                      margin: const EdgeInsets.only(
                         top: 50,
                         bottom: 20,
                       ),
-                      child: Text(
+                      child: const Text(
                         'Todas las tareas',
                         style: TextStyle(
                           fontSize: 30,
@@ -124,12 +141,20 @@ class _HomeState extends State<Home> {
     });
   }
 
-  void _addToDoItem(String todO) {
+  void _addToDoItem(String todo) async {
+    final prefs = await SharedPreferences.getInstance();
+    final todoListString = prefs.getStringList('todoList') ?? [];
+
     setState(() {
       toDoList.add(toDo(
-          id: DateTime.now().microsecondsSinceEpoch.toString(),
-          toDoText: todO));
+        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        toDoText: todo,
+      ));
     });
+
+    todoListString.add(todo);
+    prefs.setStringList('todoList', todoListString);
+
     toDoController.clear();
   }
 
